@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ward Tracker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,600&display=swap">
+<style>
+:root{color-scheme:light;--bg:#f3f7ff;--sf:#fff;--ink:#16223b;--mut:#5a6987;--ln:#dce6f7;--ac:#2563eb;--acs:#e4edff;--red:#d62828;--reds:#ffe4e4;--amb:#b45309;--ambs:#fff0cf;--grn:#0e8f4f;--grns:#d9f8e6;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "IBM Plex Sans",system-ui,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+header{background:var(--sf);border-bottom:1px solid var(--ln);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.bar{max-width:980px;margin:auto;padding:12px 16px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+h1{font:600 22px Fraunces,Georgia,serif;margin:0;flex:1}
+.roles{display:flex;border:1px solid var(--ln);border-radius:8px;overflow:hidden}
+.roles button{border:0;background:none;padding:8px 16px;cursor:pointer;color:var(--mut)}
+.roles button[aria-pressed=true]{background:var(--ac);color:#fff}
+main{max-width:980px;margin:auto;padding:16px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--ln);margin-bottom:14px;overflow-x:auto}
+.tabs button{border:0;background:none;padding:9px 14px;cursor:pointer;color:var(--mut);border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button[aria-selected=true]{color:var(--ink);border-color:var(--ac);font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:10px 14px}
+.stat b{display:block;font:600 26px Fraunces,Georgia,serif}
+.stat span{color:var(--mut);font-size:13px}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:14px;margin-bottom:14px}
+.row{display:flex;gap:12px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--ln);flex-wrap:wrap}
+.row:last-child{border:0}
+.room{font-weight:600;width:48px;color:var(--ac)}
+.who{flex:1;min-width:150px}.who small{display:block;color:var(--mut)}
+.chip{font-size:12px;padding:2px 8px;border-radius:10px;background:var(--acs);color:var(--ac);white-space:nowrap}
+.chip.r{background:var(--reds);color:var(--red)}.chip.a{background:var(--ambs);color:var(--amb)}.chip.g{background:var(--grns);color:var(--grn)}
+.btn{border:1px solid var(--ac);background:var(--ac);color:#fff;border-radius:6px;padding:7px 14px;cursor:pointer}
+.btn.o{background:none;color:var(--ac)}.btn.d{background:var(--red);border-color:var(--red)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.tabs button:focus-visible,.roles button:focus-visible{outline:3px solid var(--amb);outline-offset:1px}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--ln);border-radius:6px;background:var(--sf)}
+label{display:block;margin:10px 0 4px;font-weight:500}
+.tools{display:flex;gap:10px;margin-bottom:10px}
+.msg{padding:10px 12px;border-radius:6px;margin:10px 0;font-size:14px}
+.msg.r{background:var(--reds);color:var(--red)}.msg.a{background:var(--ambs);color:var(--amb)}.msg.g{background:var(--grns);color:var(--grn)}
+#modal{position:fixed;inset:0;background:rgba(10,25,28,.55);display:none;align-items:flex-start;justify-content:center;padding:6vh 12px;overflow:auto;z-index:20}
+#modal.on{display:flex}
+.dlg{background:var(--sf);border-radius:10px;padding:18px;max-width:520px;width:100%}
+.dlg h2{margin:0 0 4px;font:600 20px Fraunces,Georgia,serif}
+.acts{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+.gauge{height:14px;background:var(--ln);border-radius:7px;position:relative;margin:10px 0 4px}
+.gauge i{position:absolute;left:0;top:0;bottom:0;border-radius:7px;background:var(--grn)}
+.gauge u{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px}
+.cell{border:1px solid var(--ln);border-radius:6px;padding:6px 0;text-align:center;font-size:12px;background:var(--acs);color:var(--ac);cursor:pointer}
+.cell.f{background:var(--reds);color:var(--red)}.cell.e{background:var(--sf);color:var(--mut);cursor:default}.cell.k{background:var(--grns);color:var(--grn)}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;display:none;z-index:30}
+.log{font-size:13px;color:var(--mut)}.log div{padding:5px 0;border-bottom:1px solid var(--ln)}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}.tbl td,.tbl th{padding:5px 6px;border-bottom:1px solid var(--ln);text-align:left}
+header{border-top:4px solid var(--ac)}h1{color:var(--ac)}
+.pb{height:8px;background:var(--ln);border-radius:4px;margin-top:8px;overflow:hidden}.pb i{display:block;height:100%;border-radius:4px}
+.two{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px}.two .card{margin:0}@media(max-width:700px){.two{grid-template-columns:1fr}}
+.big{font:600 48px/1.1 Fraunces,Georgia,serif}.stack{display:flex;height:18px;border-radius:9px;overflow:hidden;gap:2px;margin:10px 0}.stack i{display:block}
+.leg{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mut)}.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+.hrow{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:14px}.hrow>span{width:130px}.hrow .pb{flex:1;margin:0}.hrow b{width:30px;text-align:right}#wsel{width:auto}td select{width:auto;max-width:200px}
+.seg{display:flex;border:1px solid var(--ln);border-radius:8px;overflow:hidden;white-space:nowrap}.seg button{border:0;background:var(--sf);padding:8px 14px;cursor:pointer;color:var(--mut)}.seg button[aria-pressed=true]{background:var(--ac);color:#fff}.seg button:focus-visible{outline:3px solid var(--amb);outline-offset:-3px}.tools input{flex:1;min-width:0}
+</style>
+</head>
+<body>
+<header><div class="bar"><h1>Ward Tracker</h1>
+<div class="roles" role="group" aria-label="Role"></div><div id="who"></div></div></header>
+<main id="app"></main>
+<div id="modal" role="dialog" aria-modal="true"></div>
+<div id="toast" role="status"></div>
+<script>
+const TODAY=30,FEVER=38,CRIT=40,CAP=74;
+let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+const FN=["Aarav","Meera","Rohan","Isha","Kabir","Anaya","Vikram","Diya","Arjun","Neha","Rahul","Sana","Imran","Pooja","Karan","Tara","Dev","Riya","Nikhil","Zoya"];
+const LN=["Sharma","Iyer","Khan","Patel","Mehta","Nair","Gupta","Rao","Joshi","Das","Menon","Shah"];
+const NURSE="Nurse Priya",DOC="Dr. Rao";
+const SH={Morning:"06:00–14:00",Afternoon:"14:00–22:00",Night:"22:00–06:00"};
+const ST=[{id:1,name:NURSE,role:"nurse",shift:"Morning",on:true},{id:2,name:"Nurse Ahmed",role:"nurse",shift:"Morning",on:true},{id:3,name:"Nurse Lena",role:"nurse",shift:"Night",on:false},{id:4,name:DOC,role:"doctor",shift:"Morning",on:true},{id:5,name:"Dr. Fernandes",role:"doctor",shift:"Morning",on:true},{id:6,name:"Dr. Kapoor",role:"doctor",shift:"Night",on:false}];
+let sid=7;const U={nurse:1,doctor:4};
+let P=[],LOG=[],CLOSED=[],BASE={cured:52,dead:9},nid=1;
+const pad=n=>String(n).padStart(2,"0"),clock=()=>{const d=new Date();return pad(d.getHours())+":"+pad(d.getMinutes())};
+function reading(base,hi){return +(hi?38.4+rnd()*1.9:36.5+rnd()*1.0).toFixed(1)}
+for(let i=0;i<CAP;i++){
+ const d=i%9==0?7:Math.floor(rnd()*11),tail=i%9==0?4:Math.floor(rnd()*3);
+ const p={id:nid++,name:FN[i%20]+" "+LN[(i*5+3)%12],age:18+Math.floor(rnd()*60),room:i+1,adm:TODAY-d,temps:{},visits:{},status:"active",rec:false};
+ for(let j=0;j<d;j++){if(j>0&&j<d-1&&rnd()<.05)continue;p.temps[p.adm+j]=[{v:reading(0,j<d-tail),t:"08:"+pad(10+j),by:NURSE}]}
+ if(rnd()<.5){p.temps[TODAY]=[{v:reading(0,tail==0),t:pad(6+Math.floor(rnd()*4))+":"+pad(Math.floor(rnd()*60)),by:i%3?NURSE:"Nurse Ahmed"}];if(rnd()<.35)p.visits[TODAY]={t:"09:40",notes:"Reviewed chart. Continue hydration and antipyretics.",by:i%2?DOC:"Dr. Fernandes"}}
+ P.push(p)}
+const act=P.filter(p=>p.status=="active"),cur=p=>{const a=p.temps[TODAY];return a?a[a.length-1]:null};
+function streak(p){let s=0,k=TODAY;if(!p.temps[k])k--;for(;k>=p.adm;k--){const a=p.temps[k];if(!a||a[a.length-1].v>=FEVER)break;s++}return s}
+const eligible=p=>p.status=="active"&&streak(p)>=3;
+const log=m=>LOG.unshift(clock()+"  "+m);
+const S={role:"nurse",tab:{nurse:"pending",doctor:"ready",admin:"overview"},q:""};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(m){const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display="none",2600)}
+function stats(){const c=BASE.cured+CLOSED.filter(x=>x.o=="cured").length,d=BASE.dead+CLOSED.filter(x=>x.o=="dead").length,n=c+d;return{c,d,n,rate:n?d/n*100:0}}
+const active=()=>P.filter(p=>p.status=="active");
+const stateChip=p=>{const c=cur(p);return c?(c.v>=CRIT?'<span class="chip r">Critical '+c.v+'°</span>':c.v>=FEVER?'<span class="chip r">Fever '+c.v+'°</span>':'<span class="chip g">'+c.v+'° normal</span>'):'<span class="chip a">Temp pending</span>'};
+function render(){
+ $(".roles").innerHTML=["nurse","doctor","admin"].map(r=>`<button data-a="role" data-v="${r}" aria-pressed="${S.role==r}">${r[0].toUpperCase()+r.slice(1)}</button>`).join("");
+ $("#who").innerHTML=S.role=="admin"?'<span class="log">Admin</span>':`<select id="wsel" aria-label="Signed in as">${ST.filter(s=>s.role==S.role).map(s=>`<option value="${s.id}" ${s.id==U[S.role]?"selected":""}>${esc(s.name)}${s.on?"":" (off duty)"}</option>`).join("")}</select>`;
+ $("#app").innerHTML=({nurse,doctor,admin})[S.role]();
+}
+function tabs(list){return `<div class="tabs" role="tablist">${list.map(([k,l])=>`<button role="tab" data-a="tab" data-v="${k}" aria-selected="${S.tab[S.role]==k}">${l}</button>`).join("")}</div>`}
+const search=()=>`<div class="tools"><input id="q" type="search" placeholder="Search name or room" value="${esc(S.q)}" aria-label="Search patients"></div>`;
+const match=p=>!S.q||(p.name+" R"+p.room).toLowerCase().includes(S.q.toLowerCase());
+function nurse(){
+ const A=active(),pend=A.filter(p=>!cur(p)),done=A.filter(p=>cur(p)),t=S.tab.nurse;
+ const L=(t=="pending"?pend:t=="done"?done:A).filter(match);
+ return dutyBar()+`<div class="stats"><div class="stat"><b>${pend.length}</b><span>Still to measure today</span></div><div class="stat"><b>${done.length}</b><span>Measured today</span></div><div class="stat"><b>${A.filter(p=>cur(p)&&cur(p).v>=FEVER).length}</b><span>Fever readings today</span></div></div>`+
+ tabs([["pending","To measure"],["done","Measured"],["all","All patients"]])+search()+
+ `<div class="card">${L.length?L.map(p=>`<div class="row"><span class="room">R${p.room}</span><div class="who">${esc(p.name)}<small>${p.age} yrs · day ${TODAY-p.adm+1}${cur(p)?" · by "+esc(cur(p).by.replace("Nurse ",""))+" at "+cur(p).t:""}</small></div>${stateChip(p)}<button class="btn ${cur(p)?"o":""}" data-a="temp" data-v="${p.id}">${cur(p)?"Amend reading":"Record temperature"}</button></div>`).join(""):'<p>Nobody here. Every patient has been measured today.</p>'}</div>`}
+function sortBar(){const s=S.sort||"crit";return `<div class="tools"><input id="q" type="search" placeholder="Search name or room" value="${esc(S.q)}" aria-label="Search patients"><div class="seg" role="group" aria-label="Sort patients by">${[["crit","Most critical first"],["room","Room number"]].map(([k,l])=>`<button data-a="sort" data-v="${k}" aria-pressed="${s==k}">${l}</button>`).join("")}</div></div>`}
+function doctor(){
+ const A=active(),t=S.tab.doctor;
+ const g={ready:A.filter(p=>cur(p)&&!p.visits[TODAY]),pend:A.filter(p=>!cur(p)&&!p.visits[TODAY]),seen:A.filter(p=>p.visits[TODAY]),dis:A.filter(eligible)};
+ const L=g[t].filter(match).sort((S.sort||"crit")=="room"?(a,b)=>a.room-b.room:(a,b)=>((cur(b)||{v:0}).v-(cur(a)||{v:0}).v)||a.room-b.room);
+ const cr=A.filter(p=>cur(p)&&cur(p).v>=CRIT).sort((a,b)=>cur(b).v-cur(a).v);
+ const alertBar=cr.length?`<div class="msg r" role="alert"><b>${cr.length} critical patient${cr.length>1?"s":""} at ${CRIT}°C or above</b>${cr.map(p=>`<div class="row" style="padding:6px 0"><span class="room" style="color:inherit">R${p.room}</span><div class="who">${esc(p.name)}<small style="color:inherit">${cur(p).v}°C${p.visits[TODAY]?" · visited today":" · not visited yet"}</small></div><button class="btn d" data-a="open" data-v="${p.id}">Open chart</button></div>`).join("")}</div>`:"";
+ return dutyBar()+alertBar+`<div class="stats"><div class="stat"><b>${g.ready.length}</b><span>Ready to visit</span></div><div class="stat"><b>${g.pend.length}</b><span>Waiting on temperature</span></div><div class="stat"><b>${g.seen.length}</b><span>Visited today</span></div><div class="stat"><b>${g.dis.length}</b><span>Meet discharge rule</span></div></div>`+
+ tabs([["ready","Ready to visit"],["pend","Temp pending"],["seen","Visited"],["dis","Discharge candidates"]])+sortBar()+
+ `<div class="card">${L.length?L.map(p=>`<div class="row"><span class="room">R${p.room}</span><div class="who">${esc(p.name)}<small>Fever-free streak: ${Math.min(streak(p),3)}/3 days${p.rec?" · discharge recommended":""}</small></div>${stateChip(p)}<button class="btn o" data-a="open" data-v="${p.id}">Open chart</button></div>`).join(""):'<p>No patients in this list.</p>'}</div>`}
+const bar=(p,c)=>`<div class="pb"><i style="width:${Math.min(p,100)}%;background:${c}"></i></div>`;
+function overview(A,st){
+ const over=st.rate>15&&st.n>=10,near=!over&&st.rate>=12,col=over?"var(--red)":near?"var(--amb)":"var(--grn)",r=st.rate.toFixed(1);
+ const M=A.filter(p=>cur(p)),cr=M.filter(p=>cur(p).v>=CRIT),fv=M.filter(p=>cur(p).v>=FEVER&&cur(p).v<CRIT),ok=M.length-cr.length-fv.length,np=A.length-M.length,N=Math.max(A.length,1);
+ const sk=[0,1,2,3].map(k=>A.filter(p=>k<3?streak(p)==k:streak(p)>=3).length),rd=A.filter(p=>eligible(p)&&!p.rec).length,cp=st.n?st.c/st.n*251.3:0;
+ const seg=[[ok,"var(--grn)","Normal"],[fv.length,"var(--amb)","Fever"],[cr.length,"var(--red)","Critical"],[np,"var(--ln)","Not measured"]];
+ const sc=[["0 days","var(--red)"],["1 day","var(--amb)"],["2 days","var(--ac)"],["3+ days (eligible)","var(--grn)"]];
+ const banner=over?`<div class="msg r"><b>Mortality is above benchmark.</b> ${r}% against the expected 15%. Review treatment protocols.</div>`:near?`<div class="msg a">Mortality is ${r}%, close to the 15% limit.</div>`:`<div class="msg g">Mortality is ${r}%, within the 15% benchmark.</div>`;
+ return banner+
+ `<div class="two"><div class="card"><div class="log">Mortality rate: deceased ÷ (cured + deceased)</div><div class="big" style="color:${col}">${r}%</div><div class="pb" style="height:14px;position:relative;overflow:visible"><i style="width:${Math.min(st.rate/30*100,100)}%;background:${col}"></i><u style="position:absolute;left:50%;top:-4px;bottom:-4px;width:2px;background:var(--ink)"></u></div><div class="log" style="margin-top:6px">Scale 0 to 30%. Marker is the 15% limit. Success rate ${(100-st.rate).toFixed(1)}% vs 85% target.</div></div>`+
+ `<div class="card"><div class="log">Closed cases</div><div style="display:flex;align-items:center;gap:16px"><svg viewBox="0 0 100 100" width="120" role="img" aria-label="${st.c} cured, ${st.d} deceased"><circle cx="50" cy="50" r="40" fill="none" stroke="var(--red)" stroke-width="14"/><circle cx="50" cy="50" r="40" fill="none" stroke="var(--grn)" stroke-width="14" stroke-dasharray="${cp} 251.3" transform="rotate(-90 50 50)"/><text x="50" y="56" text-anchor="middle" font-size="18" font-weight="600" fill="var(--ink)">${st.n}</text></svg><div class="leg" style="flex-direction:column;gap:8px"><span><i class="dot" style="background:var(--grn)"></i>${st.c} cured</span><span><i class="dot" style="background:var(--red)"></i>${st.d} deceased</span></div></div></div></div>`+
+ `<div class="stats"><div class="stat"><b>${A.length}/${CAP}</b><span>Rooms occupied</span>${bar(A.length/CAP*100,"var(--ac)")}</div><div class="stat"><b>${M.length}/${A.length}</b><span>Temps recorded today</span>${bar(M.length/N*100,"var(--grn)")}</div><div class="stat"><b>${A.filter(p=>p.visits[TODAY]).length}/${A.length}</b><span>Doctor visits today</span>${bar(A.filter(p=>p.visits[TODAY]).length/N*100,"var(--grn)")}</div><div class="stat"><b>${A.filter(p=>p.rec).length}</b><span>Awaiting discharge</span></div></div>`+
+ `<div class="card"><b>Patients today</b><div class="stack">${seg.map(s=>`<i style="width:${s[0]/N*100}%;background:${s[1]}"></i>`).join("")}</div><div class="leg">${seg.map(s=>`<span><i class="dot" style="background:${s[1]}"></i>${s[2]} ${s[0]}</span>`).join("")}</div></div>`+
+ `<div class="two"><div class="card"><b>Fever-free streak</b>${sk.map((n,i)=>`<div class="hrow"><span>${sc[i][0]}</span>${bar(n/N*100,sc[i][1])}<b>${n}</b></div>`).join("")}</div><div class="card"><b>Needs attention</b>${rd?`<div class="msg a">${rd} patient${rd>1?"s meet":" meets"} the 3-day rule but no doctor has recommended discharge.</div>`:""}${cr.length?cr.slice(0,5).map(p=>`<div class="row"><span class="room">R${p.room}</span><div class="who">${esc(p.name)}</div><span class="chip r">${cur(p).v}°</span><button class="btn o" data-a="open" data-v="${p.id}">View</button></div>`).join(""):"<p class=\"log\">No critical readings today.</p>"}</div></div>`}
+function admin(){
+ const t=S.tab.admin,A=active(),st=stats(),free=CAP-A.length;
+ let h=tabs([["overview","Dashboard"],["dis","Discharges"],["rooms","Rooms & admit"],["staff","Staff"],["log","Activity"]]);
+ if(t=="overview")h+=overview(A,st);
+ if(t=="dis"){const L=A.filter(p=>p.rec);h+=`<div class="card">${L.length?L.map(p=>`<div class="row"><span class="room">R${p.room}</span><div class="who">${esc(p.name)}<small>Doctor recommended discharge</small></div><button class="btn" data-a="discharge" data-v="${p.id}">Discharge and free room</button></div>`).join(""):"<p>No discharges waiting. They appear here after a doctor confirms.</p>"}</div>`}
+ if(t=="rooms"){const taken=new Set(A.map(p=>p.room));
+  h+=`<div class="card"><b>Rooms</b> <span class="log">${free} free</span><div class="grid" style="margin-top:10px">${Array.from({length:CAP},(_,i)=>{const p=A.find(x=>x.room==i+1);return p?`<button class="cell ${cur(p)&&cur(p).v>=FEVER?"f":p.rec?"k":""}" data-a="open" data-v="${p.id}" title="${esc(p.name)}">R${i+1}</button>`:`<div class="cell e">R${i+1}</div>`}).join("")}</div></div>`+
+  `<div class="card"><b>Admit patient</b>${free?"":'<div class="msg r">All 74 rooms are occupied. Discharge a patient before admitting someone new.</div>'}<label for="an">Full name</label><input id="an"><label for="aa">Age</label><input id="aa" type="number"><label for="ar">Room</label><select id="ar">${Array.from({length:CAP},(_,i)=>i+1).filter(r=>!taken.has(r)).map(r=>`<option>${r}</option>`).join("")}</select><div id="aerr"></div><div class="acts"><button class="btn" data-a="admit" ${free?"":"disabled"}>Admit patient</button></div></div>`}
+ if(t=="log")h+=`<div class="card log">${LOG.length?LOG.map(l=>`<div>${esc(l)}</div>`).join(""):"Actions you take will be listed here."}</div>`;
+ if(t=="staff")h+=staffView(A);
+ return h}
+function dutyBar(){const m=me();return `<div class="msg ${m.on?"g":"a"}" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span style="flex:1">${esc(m.name)} · ${m.shift} shift (${SH[m.shift]}) · ${m.on?"on duty":"off duty. Clock in to record readings and visits."}</span><button class="btn o" data-a="clock" data-v="${m.id}">${m.on?"Clock out":"Clock in"}</button></div>`}
+function duty(s){if(s.on&&ST.filter(x=>x.role==s.role&&x.on).length<2){toast(`Can't clock out: ${s.name} is the only ${s.role} on duty. Clock in a replacement first.`);return}s.on=!s.on;log(`${s.name} clocked ${s.on?"in":"out"} (${s.shift})`);render();toast(`${s.name} is ${s.on?"on":"off"} duty`)}
+function staffView(A){
+ const on=r=>ST.filter(s=>s.role==r&&s.on).length,nO=on("nurse"),dO=on("doctor");
+ const cnt=s=>s.role=="nurse"?P.reduce((n,p)=>n+(p.temps[TODAY]||[]).filter(r=>r.by.startsWith(s.name)).length,0):P.filter(p=>p.visits[TODAY]&&p.visits[TODAY].by==s.name).length;
+ return `<div class="stats"><div class="stat"><b>${nO}</b><span>Nurses on duty</span></div><div class="stat"><b>${dO}</b><span>Doctors on duty</span></div><div class="stat"><b>${nO?Math.ceil(A.length/nO):"-"}</b><span>Patients per nurse</span></div><div class="stat"><b>${dO?Math.ceil(A.length/dO):"-"}</b><span>Patients per doctor</span></div></div>`+
+ `<div class="card" style="overflow-x:auto"><table class="tbl"><tr><th>Name</th><th>Shift</th><th>Status</th><th>Done today</th><th></th></tr>${ST.map(s=>`<tr><td>${esc(s.name)}<div class="log">${s.role}</div></td><td><select data-shift="${s.id}" aria-label="Shift for ${esc(s.name)}">${Object.keys(SH).map(k=>`<option value="${k}" ${k==s.shift?"selected":""}>${k} ${SH[k]}</option>`).join("")}</select></td><td><span class="chip ${s.on?"g":"a"}">${s.on?"On duty":"Off duty"}</span></td><td>${cnt(s)} ${s.role=="nurse"?"readings":"visits"}</td><td><button class="btn o" data-a="clock" data-v="${s.id}">${s.on?"Clock out":"Clock in"}</button> <button class="btn o" data-a="rmstaff" data-v="${s.id}">Remove</button></td></tr>`).join("")}</table></div>`+
+ `<div class="card"><b>Add staff member</b><label for="sn">Name</label><input id="sn"><label for="sr">Role</label><select id="sr"><option value="nurse">Nurse</option><option value="doctor">Doctor</option></select><label for="ss">Shift</label><select id="ss">${Object.keys(SH).map(k=>`<option>${k}</option>`).join("")}</select><div id="serr"></div><div class="acts"><button class="btn" data-a="addstaff">Add staff member</button></div></div>`}
+function modal(h){const m=$("#modal");m.innerHTML=`<div class="dlg">${h}</div>`;m.classList.add("on");const f=m.querySelector("input,textarea,button");f&&f.focus()}
+const close=()=>$("#modal").classList.remove("on");
+function tempModal(p,by){
+ const c=cur(p);
+ modal(`<h2>${c?"Amend":"Record"} temperature</h2><div class="log">R${p.room} · ${esc(p.name)}</div>${c?`<div class="msg a">Already recorded today at ${c.t} (${c.v}°C by ${esc(c.by)}). Saving replaces it and is logged as an amendment.</div>`:""}<label for="tv">Temperature (°C)</label><input id="tv" type="number" step="0.1" inputmode="decimal" placeholder="e.g. 37.2"><div id="tw"></div><div class="acts"><button class="btn o" data-a="close">Cancel</button><button class="btn" data-a="savetemp" data-v="${p.id}" data-by="${by}">${c?"Save amendment":"Save reading"}</button></div>`);
+ $("#tv").addEventListener("input",e=>{const v=parseFloat(e.target.value);$("#tw").innerHTML=isNaN(v)?"":v<34||v>43?'<div class="msg r">Value must be between 34 and 43 °C.</div>':v>=CRIT?'<div class="msg r">Critical fever. The doctor is alerted first.</div>':v>=FEVER?'<div class="msg a">Fever. This resets the 3-day countdown.</div>':""})}
+function chart(p){
+ const days=[];for(let k=Math.max(p.adm,TODAY-9);k<=TODAY;k++)days.push(k);
+ const w=440,h=90,x=i=>10+i*(w-20)/Math.max(days.length-1,1),y=v=>h-10-(v-35)/(41-35)*(h-20);
+ let pts=days.map((k,i)=>p.temps[k]?[x(i),y(Math.min(Math.max(p.temps[k][p.temps[k].length-1].v,35),41))]:null);
+ const line=pts.filter(Boolean).map(q=>q.join(",")).join(" ");
+ return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="Temperature trend"><line x1="0" x2="${w}" y1="${y(FEVER)}" y2="${y(FEVER)}" stroke="var(--red)" stroke-dasharray="4 3"/><polyline points="${line}" fill="none" stroke="var(--ac)" stroke-width="2"/>${pts.map(q=>q?`<circle cx="${q[0]}" cy="${q[1]}" r="3.5" fill="var(--ac)"/>`:"").join("")}</svg><div class="log">Dashed line: ${FEVER}°C fever threshold. Gaps mean no reading.</div>`}
+function chartModal(p){
+ const s=streak(p),c=cur(p),v=p.visits[TODAY];
+ const hist=Object.keys(p.temps).map(Number).sort((a,b)=>b-a).slice(0,6).map(k=>`<tr><td>Day ${k-p.adm+1}</td><td>${p.temps[k].map(r=>r.v+"°").join(", ")}</td><td>${p.temps[k][p.temps[k].length-1].by}</td></tr>`).join("");
+ modal(`<h2>R${p.room} · ${esc(p.name)}</h2><div class="log">${p.age} yrs · day ${TODAY-p.adm+1} · fever-free streak ${Math.min(s,3)}/3</div>${chart(p)}
+ ${eligible(p)&&!p.rec?'<div class="msg g">Three fever-free days recorded. You can recommend discharge.</div>':""}${p.rec?'<div class="msg g">Discharge recommended. Waiting for admin.</div>':""}
+ <table class="tbl"><tr><th>Day</th><th>Readings</th><th>By</th></tr>${hist}</table>
+ ${v?`<div class="msg g">Visited at ${v.t}: ${esc(v.notes)}</div>`:""}
+ <div class="acts"><button class="btn o" data-a="close">Close</button>${S.role=="doctor"?`<button class="btn d" data-a="death" data-v="${p.id}">Record death</button><button class="btn o" data-a="rec" data-v="${p.id}" ${eligible(p)&&!p.rec?"":"disabled"} title="${eligible(p)?"":"Needs 3 full fever-free days"}">Recommend discharge</button><button class="btn" data-a="visit" data-v="${p.id}" ${v?"disabled":""}>${v?"Visited today":"Log visit"}</button>`:""}</div>`)}
+function visitModal(p){
+ const c=cur(p);
+ modal(`<h2>Log visit</h2><div class="log">R${p.room} · ${esc(p.name)}</div>${c?"":'<div class="msg a">No temperature recorded today. Ask a nurse to measure first, or enter a fallback reading below (marked as doctor-entered).</div><label for="ft">Fallback temperature (°C, optional)</label><input id="ft" type="number" step="0.1">'}<label for="vn">Treatment notes</label><textarea id="vn" rows="3"></textarea><div id="verr"></div><div class="acts"><button class="btn o" data-a="close">Cancel</button><button class="btn" data-a="savevisit" data-v="${p.id}">Save visit</button></div>`)}
+const byId=id=>P.find(p=>p.id==id);
+const me=()=>ST.find(s=>s.id==U[S.role])||{name:"Admin",on:true};
+document.addEventListener("click",e=>{
+ const b=e.target.closest("[data-a]");if(!b)return;const a=b.dataset.a,v=b.dataset.v,p=v&&byId(v);
+ if(["temp","visit","rec","death","savetemp","savevisit","death2"].includes(a)&&S.role!="admin"&&!me().on){toast("You are off duty. Clock in first.");return}
+  if(a=="role"){S.role=v;S.q="";render()}
+ else if(a=="tab"){S.tab[S.role]=v;render()}
+ else if(a=="close")close();
+ else if(a=="temp")tempModal(p,me().name);
+ else if(a=="open")chartModal(p);
+ else if(a=="visit")visitModal(p);
+ else if(a=="savetemp"){const val=parseFloat($("#tv").value);if(isNaN(val)||val<34||val>43){$("#tw").innerHTML='<div class="msg r">Enter a temperature between 34 and 43 °C.</div>';return}
+  const ex=cur(p),r={v:val,t:clock(),by:b.dataset.by,am:!!ex};ex?p.temps[TODAY][p.temps[TODAY].length-1]=r:p.temps[TODAY]=[r];
+  if(p.rec&&val>=FEVER)p.rec=false;
+  log(`${b.dataset.by} ${ex?"amended":"recorded"} ${val}°C for R${p.room}`);close();render();toast(`Saved ${val}°C for ${p.name}`)}
+ else if(a=="savevisit"){const n=$("#vn").value.trim();if(!n){$("#verr").innerHTML='<div class="msg r">Add treatment notes before saving.</div>';return}
+  const ft=$("#ft");if(ft&&ft.value){const x=parseFloat(ft.value);if(x<34||x>43||isNaN(x)){$("#verr").innerHTML='<div class="msg r">Fallback temperature must be 34 to 43 °C.</div>';return}p.temps[TODAY]=[{v:x,t:clock(),by:me().name+" (fallback)"}]}
+  p.visits[TODAY]={t:clock(),notes:n,by:me().name};log(`${me().name} visited R${p.room}${cur(p)?"":" without a temperature"}`);close();render();toast("Visit saved")}
+ else if(a=="rec"){if(!eligible(p))return;p.rec=true;log(`${me().name} recommended discharge for R${p.room}`);close();render();toast("Sent to admin for discharge")}
+ else if(a=="death")modal(`<h2>Record death?</h2><div class="msg r">${esc(p.name)} (R${p.room}) will be closed as deceased and counted in the mortality rate. Only admin can reverse this.</div><div class="acts"><button class="btn o" data-a="close">Cancel</button><button class="btn d" data-a="death2" data-v="${p.id}">Confirm death</button></div>`);
+ else if(a=="death2"){p.status="dead";CLOSED.push({o:"dead",n:p.name});log(`${me().name} recorded death of ${p.name} (R${p.room})`);close();render();const s=stats();toast(s.rate>15?`Mortality now ${s.rate.toFixed(1)}%. Above the 15% limit.`:"Recorded. Room freed.")}
+ else if(a=="discharge"){p.status="cured";CLOSED.push({o:"cured",n:p.name});log(`Admin discharged ${p.name} (R${p.room}) as cured`);render();toast("Discharged. Room "+p.room+" is free.")}
+ else if(a=="sort"){S.sort=v;render()}
+ else if(a=="clock")duty(ST.find(x=>x.id==v));
+ else if(a=="rmstaff"){const s=ST.find(x=>x.id==v);if(s.on){toast("Clock them out before removing.");return}if(ST.filter(x=>x.role==s.role).length<2){toast(`Keep at least one ${s.role} on the team.`);return}ST.splice(ST.indexOf(s),1);if(U[s.role]==s.id)U[s.role]=ST.find(x=>x.role==s.role&&x.on).id;log(`Admin removed ${s.name}`);render()}
+ else if(a=="addstaff"){const n=$("#sn").value.trim().replace(/^(dr\.?|nurse)\s+/i,""),r=$("#sr").value,er=$("#serr");if(!n){er.innerHTML='<div class="msg r">Enter the staff member’s name.</div>';return}const nm=(r=="doctor"?"Dr. ":"Nurse ")+n;if(ST.some(x=>x.name.toLowerCase()==nm.toLowerCase())){er.innerHTML='<div class="msg r">'+esc(nm)+' is already on the team.</div>';return}ST.push({id:sid++,name:nm,role:r,shift:$("#ss").value,on:false});log(`Admin added ${nm} (${r})`);render();toast(`${nm} added. Clock them in to start their shift.`)}
+ else if(a=="admit"){const n=$("#an").value.trim(),ag=parseInt($("#aa").value),r=parseInt($("#ar").value),er=$("#aerr");
+  if(!n||!(ag>=0&&ag<=120)||!r){er.innerHTML='<div class="msg r">Enter a name, an age from 0 to 120, and a free room.</div>';return}
+  P.push({id:nid++,name:n,age:ag,room:r,adm:TODAY,temps:{},visits:{},status:"active",rec:false});log(`Admin admitted ${n} to R${r}`);render();toast(`${n} admitted to R${r}`)}
+});
+document.addEventListener("input",e=>{if(e.target.id=="q"){S.q=e.target.value;const pos=e.target.selectionStart;render();const q=$("#q");q.focus();q.setSelectionRange(pos,pos)}});
+document.addEventListener("change",e=>{const t=e.target;if(t.id=="wsel"){U[S.role]=+t.value;render()}else if(t.dataset.shift){const s=ST.find(x=>x.id==t.dataset.shift);s.shift=t.value;log(`Admin moved ${s.name} to ${t.value} shift`);toast(`${s.name} moved to ${t.value} shift`);render()}});
+document.addEventListener("keydown",e=>{if(e.key=="Escape")close()});
+// Demo state: one patient is a day away from discharge, one death pushes mortality over 15%
+render();
+</script>
+</body>
+</html>
